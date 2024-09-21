@@ -15,11 +15,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Box<TasklyResponseModel>? box;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -29,14 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 5,
         shadowColor: Colors.grey,
       ),
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        onPressed: () {
-          setState(() {
-            addTodoTaskPopUpWidget(context);
-          });
+      floatingActionButton: BlocBuilder<HomePageCubit, HomePageState>(
+        builder: (context, state) {
+          return FloatingActionButton(
+            shape: const CircleBorder(),
+            onPressed: () {
+              addTodoTaskPopUpWidget(context, state);
+            },
+            child: const Icon(Icons.add),
+          );
         },
-        child: const Icon(Icons.add),
       ),
       body: BlocBuilder<HomePageCubit, HomePageState>(
         builder: (context, state) {
@@ -49,9 +46,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Center(child: CircularProgressIndicator());
                 } else {
                   box = snapshot.data;
-                  List<int> keys = box!.keys.cast<int>().toList();
-                  List<TasklyResponseModel> list = box!.values.toList();
-                  return taskList(keys, list);
+                  return ValueListenableBuilder(
+                    valueListenable: box!.listenable(),
+                    builder: (BuildContext context,
+                        Box<TasklyResponseModel> box, _) {
+                      List<int> keys = box.keys.cast<int>().toList();
+                      List<TasklyResponseModel> list = box.values.toList();
+                      return taskList(keys, list);
+                    },
+                  );
+                  // taskList(keys, list);
                 }
               },
             ),
@@ -70,10 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (BuildContext context, int index) {
             return ListTile(
               onLongPress: () {
-                setState(() {
-                  // Delete using the key instead of the index
-                  box!.delete(keys[index]);
-                });
+                box!.delete(keys[index]);
               },
               isThreeLine: true,
               title: Text(
@@ -107,28 +108,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<Widget> addTodoTaskPopUpWidget(BuildContext contexts) async {
+  Future<Widget> addTodoTaskPopUpWidget(
+      BuildContext contexts, HomePageState state) async {
     return await showDialog(
-        context: contexts,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(3.0),
-            ),
-            title: const Text("Add New Task!"),
-            content: TextField(
-              onSubmitted: (value) {
-                contexts.read<HomePageCubit>().changeName(value);
-                box?.add(TasklyResponseModel(
-                  content: value,
-                  dateTime: DateTime.now().toString(),
-                  status: false,
-                ));
-                Navigator.pop(contexts);
-                setState(() {});
-              },
-            ),
-          );
-        });
+      context: contexts,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(3.0),
+          ),
+          title: const Text("Add New Task!"),
+          content: TextField(
+            onSubmitted: (value) {
+              contexts.read<HomePageCubit>().changeTitle(value);
+              box?.add(TasklyResponseModel(
+                content: value,
+                dateTime: DateTime.now().toString(),
+                status: false,
+              ));
+              Navigator.pop(contexts);
+            },
+          ),
+        );
+      },
+    );
   }
 }

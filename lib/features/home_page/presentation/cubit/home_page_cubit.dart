@@ -7,7 +7,7 @@ part 'home_page_cubit.freezed.dart';
 class HomePageCubit extends Cubit<HomePageState> {
   HomePageCubit() : super(HomePageState.initial());
 
- void changeName(String? name){
+ void changeTitle(String? name){
   emit(state.copyWith(
     name: name,
   ));
